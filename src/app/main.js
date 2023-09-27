@@ -476,11 +476,11 @@ const initUpdater = () => {
 	autoUpdater.checkForUpdates();
 }
 
-const initShortcuts = () => {
+function initShortcuts() {
 	const KEY_BINDS = {
 		escape: {
 			key: 'Esc',
-			press: _ => gameWindow.webContents.send('esc')
+			press: _ => mainWindow.webContents.send('esc')
 		},
 		quit: {
 			key: 'Alt+F4',
@@ -488,41 +488,42 @@ const initShortcuts = () => {
 		},
 		refresh: {
 			key: 'F5',
-			press: _ => gameWindow.webContents.reloadIgnoringCache()
+			press: _ => mainWindow.webContents.reloadIgnoringCache()
 		},
+		/*
 		fullscreen: {
 			key: 'F11',
 			press: _ => {
-				let full = !gameWindow.isFullScreen();
-				gameWindow.setFullScreen(full);
-				config.set("fullscreen", full);
+				let focusedWindow = BrowserWindow.getFocusedWindow();
+				setTimeout(function(){ focusedWindow.setFullScreen(!focusedWindow.isFullScreen()) }, 500);
 			}
-		},
-    devTools: {
+		},*/
+		openDevTools: {
 			key: 'F12',
-			press: _ => {
-				gameWindow.webContents.isDevToolsOpened() 
-				? gameWindow.webContents.closeDevTools() 
-				: gameWindow.webContents.openDevTools({ mode: 'undocked' });
-			}
-		},
-		clearConfig: {
-			key: 'Ctrl+F1',
-			press: _ => {
-				config.store = {};
-				app.relaunch();
-				app.quit();
-			}
-		},
-		openConfig: {
-			key: 'Shift+F1',
-			press: _ => config.openInEditor(),
+			press: _ => mainWindow.webContents.openDevTools({ mode: 'undocked' }),
 		}
 	}
 	Object.keys(KEY_BINDS).forEach(k => {
-		shortcut.register(gameWindow, KEY_BINDS[k].key, KEY_BINDS[k].press);
+		shortcut.register(mainWindow, KEY_BINDS[k].key, () => KEY_BINDS[k].press());
 	});
-};
+}
+// Some APIs can only be used after this event occurs.
+app.on('ready', () => {
+  createWindow();
+  initShortcuts();
+})
+
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('activate', function () {
+  if (mainWindow === null) {
+    createWindow()
+  }
+})
 
 const initResourceSwapper = () => {
 	// Resource Swapper
